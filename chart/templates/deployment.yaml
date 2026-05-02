@@ -1,0 +1,109 @@
+{{- /*
+  Helper templates are defined inline here for a zero-dependency chart.
+  If you prefer a _helpers.tpl file, move them there.
+*/ -}}
+{{- define "postgres-pgvector.fullname" -}}
+{{- printf "%s-%s" .Release.Name .Chart.Name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{- define "postgres-pgvector.labels" -}}
+helm.sh/chart: {{ printf "%s-%s" .Chart.Name .Chart.Version }}
+app.kubernetes.io/name: {{ .Chart.Name }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end }}
+
+{{- define "postgres-pgvector.selectorLabels" -}}
+app.kubernetes.io/name: {{ .Chart.Name }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "postgres-pgvector.fullname" . }}-init
+  labels:
+    {{- include "postgres-pgvector.labels" . | nindent 4 }}
+data:
+  init.sql: |
+{{ .Values.initSQL | indent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "postgres-pgvector.fullname" . }}
+  labels:
+    {{- include "postgres-pgvector.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "postgres-pgvector.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: Recreate   # required for a single-replica DB with a RWO PVC
+  template:
+    metadata:
+      labels:
+        {{- include "postgres-pgvector.selectorLabels" . | nindent 8 }}
+    spec:
+      initContainers:
+        # Copy the init SQL into the docker-entrypoint-initdb.d directory so
+        # PostgreSQL runs it on first start (after the main container creates the data dir).
+        - name: copy-init-sql
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - cp /init-scripts/init.sql /docker-entrypoint-initdb.d/init.sql
+          volumeMounts:
+            - name: init-scripts
+              mountPath: /init-scripts
+            - name: initdb
+              mountPath: /docker-entrypoint-initdb.d
+      containers:
+        - name: postgres
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: postgres
+              containerPort: 5432
+              protocol: TCP
+          envFrom:
+            - secretRef:
+                name: {{ include "postgres-pgvector.fullname" . }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: initdb
+              mountPath: /docker-entrypoint-initdb.d
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - $(POSTGRES_USER)
+                - -d
+                - $(POSTGRES_DB)
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - $(POSTGRES_USER)
+                - -d
+                - $(POSTGRES_DB)
+            initialDelaySeconds: 30
+            periodSeconds: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "postgres-pgvector.fullname" . }}
+        - name: init-scripts
+          configMap:
+            name: {{ include "postgres-pgvector.fullname" . }}-init
+        - name: initdb
+          emptyDir: {}
