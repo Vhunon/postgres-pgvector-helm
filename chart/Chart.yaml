@@ -1,0 +1,13 @@
+apiVersion: v2
+name: postgres-pgvector
+description: A minimal Helm chart for PostgreSQL with pgvector extension — optimized for local development on k3d or Docker Desktop Kubernetes.
+type: application
+version: 0.1.0
+appVersion: "17"
+keywords:
+  - postgresql
+  - pgvector
+  - vector-database
+  - local-dev
+maintainers:
+  - name: postgres-pgvector-helm
