@@ -21,7 +21,7 @@ No Bitnami, no bloat â just the official `pgvector/pgvector:pg17` image and
 ## Quick start
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/postgres-pgvector-helm.git
+git clone https://github.com/Vhunon/postgres-pgvector-helm.git
 cd postgres-pgvector-helm
 chmod +x setup.sh teardown.sh
 ./setup.sh
