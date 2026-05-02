@@ -1,0 +1,37 @@
+# Default values for postgres-pgvector Helm chart.
+# Optimised for local development on k3d / Docker Desktop Kubernetes.
+
+image:
+  repository: pgvector/pgvector
+  tag: pg17
+  pullPolicy: IfNotPresent
+
+# PostgreSQL credentials
+postgres:
+  database: appdb
+  user: appuser
+  password: devpassword   # change for anything beyond local dev
+
+# Persistent Volume Claim
+persistence:
+  size: 2Gi
+  storageClass: ""   # leave empty to use cluster default (local-path on k3d, hostpath on Docker Desktop)
+
+# Service configuration
+service:
+  type: NodePort
+  port: 5432
+  # nodePort: 30432   # uncomment to pin a specific NodePort
+
+# Resource limits (intentionally light for laptop dev)
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Init SQL executed once on first startup (after pgvector extension is available)
+initSQL: |
+  CREATE EXTENSION IF NOT EXISTS vector;
