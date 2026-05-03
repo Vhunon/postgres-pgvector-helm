@@ -21,7 +21,7 @@ persistence:
 service:
   type: NodePort
   port: 5432
-  # nodePort: 30432   # uncomment to pin a specific NodePort
+  nodePort: 30432   # pinned to match setup.sh's k3d loadbalancer mapping (5432:30432)
 
 # Resource limits (intentionally light for laptop dev)
 resources:
