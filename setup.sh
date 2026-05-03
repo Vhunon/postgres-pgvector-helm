@@ -4,7 +4,7 @@ set -euo pipefail
 
 RELEASE_NAME="${RELEASE_NAME:-pgvector-dev}"
 NAMESPACE="${NAMESPACE:-default}"
-CLUSTER_NAME="${CLUSTER_NAME:-rancher-lab}"
+CLUSTER_NAME="${CLUSTER_NAME:-pgvector-dev}"
 CHART_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/chart" && pwd)"
 
 # âââ Colour helpers ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
